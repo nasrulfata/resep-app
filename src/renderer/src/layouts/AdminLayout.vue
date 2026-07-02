@@ -2,11 +2,21 @@
 import Sidebar from '../components/Sidebar.vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const auth = useAuthStore()
 const router = useRouter()
 const isSidebarOpen = ref(false)
+
+const showBackButton = computed(() => {
+  const path = router.currentRoute.value.path
+  // Show back button on subpages / resep create / resep detail
+  return path === '/resep/create' || /^\/resep\/\d+$/.test(path)
+})
+
+const goBack = () => {
+  router.back()
+}
 
 const logout = () => {
   auth.logout()
@@ -19,7 +29,8 @@ const logout = () => {
     <Sidebar :isOpen="isSidebarOpen" @close="isSidebarOpen = false" />
     <div class="main-content">
       <div class="topbar">
-        <button class="hamburger-btn" @click="isSidebarOpen = true">☰</button>
+        <button v-if="showBackButton" class="back-btn" @click="goBack">← Kembali</button>
+        <button v-else class="hamburger-btn" @click="isSidebarOpen = true">☰</button>
         <div class="topbar-right">
           <span class="user-info">{{ auth.user?.nama }}</span>
           <button class="logout-btn" @click="logout">Logout</button>
@@ -72,6 +83,26 @@ const logout = () => {
 
 .hamburger-btn:hover {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+.back-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  color: #334155;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.2s;
+}
+
+.back-btn:hover {
+  background-color: #e2e8f0;
+  transform: translateX(-2px);
 }
 
 .topbar-right {

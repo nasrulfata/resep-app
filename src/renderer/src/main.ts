@@ -2,6 +2,8 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
+import { Capacitor } from '@capacitor/core'
+import { App as CapApp } from '@capacitor/app'
 
 import App from './App.vue'
 import router from './router'
@@ -25,6 +27,20 @@ const init = async () => {
   app.use(router)
 
   app.mount('#app')
+
+  // Register hardware back button listener for Android/Capacitor
+  if (Capacitor.isNativePlatform()) {
+    CapApp.addListener('backButton', ({ canGoBack }) => {
+      const path = router.currentRoute.value.path
+      if (path === '/dashboard' || path === '/login') {
+        CapApp.exitApp()
+      } else if (canGoBack) {
+        router.back()
+      } else {
+        CapApp.exitApp()
+      }
+    })
+  }
 }
 
 init()
