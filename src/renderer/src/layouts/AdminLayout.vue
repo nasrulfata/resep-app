@@ -2,9 +2,11 @@
 import Sidebar from '../components/Sidebar.vue'
 import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
+import { ref } from 'vue'
 
 const auth = useAuthStore()
 const router = useRouter()
+const isSidebarOpen = ref(false)
 
 const logout = () => {
   auth.logout()
@@ -14,9 +16,10 @@ const logout = () => {
 
 <template>
   <div class="admin-layout">
-    <Sidebar />
+    <Sidebar :isOpen="isSidebarOpen" @close="isSidebarOpen = false" />
     <div class="main-content">
       <div class="topbar">
+        <button class="hamburger-btn" @click="isSidebarOpen = true">☰</button>
         <div class="topbar-right">
           <span class="user-info">{{ auth.user?.nama }}</span>
           <button class="logout-btn" @click="logout">Logout</button>
@@ -53,6 +56,22 @@ const logout = () => {
   justify-content: flex-end;
   align-items: center;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.hamburger-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #334155;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.hamburger-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .topbar-right {
@@ -100,6 +119,11 @@ const logout = () => {
 
   .topbar {
     padding: 0.75rem 1rem;
+    justify-content: space-between; /* Put hamburger on left and logout on right */
+  }
+
+  .hamburger-btn {
+    display: block;
   }
 
   .topbar-right {

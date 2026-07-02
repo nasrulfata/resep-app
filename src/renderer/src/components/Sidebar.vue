@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+
+defineProps<{
+  isOpen?: boolean
+}>()
+
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -23,32 +31,55 @@ const isActive = (path: string) => router.currentRoute.value.path === path
 const toggleSidebar = () => {
   isCollapsed.value = !isCollapsed.value
 }
+
+// Close sidebar on mobile when route changes
+watch(() => router.currentRoute.value.path, () => {
+  emit('close')
+})
 </script>
 
 <template>
-  <div class="sidebar" :class="{ collapsed: isCollapsed }">
-    <div class="logo">
-      <h2 v-if="!isCollapsed">🍳 Resep App</h2>
-      <h2 v-else class="logo-collapsed">R</h2>
-      <button v-if="isCollapsed" class="toggle-btn" @click="toggleSidebar" title="Buka menu">➡️</button>
-      <button v-else class="toggle-btn" @click="toggleSidebar" title="Tutup menu">⬅️</button>
+  <div>
+    <!-- Mobile Backdrop overlay -->
+    <div v-if="isOpen" class="sidebar-overlay" @click="emit('close')"></div>
+
+    <div class="sidebar" :class="{ collapsed: isCollapsed, 'mobile-open': isOpen }">
+      <div class="logo">
+        <h2 v-if="!isCollapsed">🍳 Resep App</h2>
+        <h2 v-else class="logo-collapsed">R</h2>
+        <button v-if="isCollapsed" class="toggle-btn desktop-only" @click="toggleSidebar" title="Buka menu">➡️</button>
+        <button v-else class="toggle-btn desktop-only" @click="toggleSidebar" title="Tutup menu">⬅️</button>
+        <button class="close-btn mobile-only" @click="emit('close')">✕</button>
+      </div>
+      <nav class="menu">
+        <router-link
+          v-for="item in filteredMenu"
+          :key="item.path"
+          :to="item.path"
+          :class="['menu-item', { active: isActive(item.path) }]"
+          :title="isCollapsed ? item.label : ''"
+        >
+          <span class="icon">{{ item.icon }}</span>
+          <span class="label" :class="{ 'desktop-hidden': isCollapsed }">{{ item.label }}</span>
+        </router-link>
+      </nav>
     </div>
-    <nav class="menu">
-      <router-link
-        v-for="item in filteredMenu"
-        :key="item.path"
-        :to="item.path"
-        :class="['menu-item', { active: isActive(item.path) }]"
-        :title="isCollapsed ? item.label : ''"
-      >
-        <span class="icon">{{ item.icon }}</span>
-        <span v-if="!isCollapsed" class="label">{{ item.label }}</span>
-      </router-link>
-    </nav>
   </div>
 </template>
 
 <style scoped>
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+}
+
 .sidebar {
   width: 250px;
   background: linear-gradient(135deg, #312e81 0%, #4338ca 45%, #7c3aed 100%);
@@ -58,8 +89,9 @@ const toggleSidebar = () => {
   height: 100vh;
   overflow-y: auto;
   box-shadow: 10px 0 30px rgba(49, 46, 129, 0.25);
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
   position: relative;
+  z-index: 999;
 }
 
 .sidebar.collapsed {
@@ -152,50 +184,82 @@ const toggleSidebar = () => {
   flex: 1;
 }
 
+.desktop-only {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+
   .sidebar {
-    width: 74px;
+    width: 250px !important;
     position: fixed;
     left: 0;
     top: 0;
     height: 100vh;
-    z-index: 999;
+    transform: translateX(-100%);
+    box-shadow: 15px 0 40px rgba(15, 23, 42, 0.3);
   }
 
-  .sidebar.collapsed {
-    width: 74px;
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
 
   .logo {
-    padding: 0.9rem 0.6rem;
+    padding: 1.2rem 1rem;
   }
 
   .logo h2 {
-    display: none;
+    display: block !important;
   }
 
-  .logo-collapsed {
-    display: block;
+  .close-btn {
+    background: rgba(255, 255, 255, 0.16);
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 50%;
+    transition: background 0.3s;
   }
 
-  .toggle-btn {
-    display: none;
+  .close-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
   }
 
   .menu {
-    padding: 0.6rem 0.45rem;
+    padding: 0.8rem 0.7rem;
   }
 
   .menu-item {
-    padding: 0.8rem;
-    justify-content: center;
-    gap: 0;
-    border-radius: 12px;
+    padding: 0.85rem 0.95rem;
+    justify-content: flex-start;
+    gap: 0.8rem;
+    border-radius: 14px;
   }
 
   .label {
-    display: none;
+    display: block !important;
+  }
+  
+  .desktop-hidden {
+    display: block !important;
   }
 }
 </style>
