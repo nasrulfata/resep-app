@@ -1,8 +1,31 @@
 import { Capacitor } from '@capacitor/core';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import bcrypt from 'bcryptjs';
 
 const sqlite = new SQLiteConnection(CapacitorSQLite);
 let db: SQLiteDBConnection | null = null;
+
+const runSeeder = async (database: SQLiteDBConnection) => {
+  const result = await database.query('SELECT COUNT(*) AS total FROM users');
+  const count = result.values && result.values.length > 0 ? (result.values[0].total ?? result.values[0]['COUNT(*)']) : 0;
+  
+  if (count > 0) return;
+
+  const adminPassword = bcrypt.hashSync('admin123', 10);
+  const userPassword = bcrypt.hashSync('user123', 10);
+
+  await database.run(`
+    INSERT INTO users (nama, username, password, role)
+    VALUES (?, ?, ?, ?)
+  `, ['Administrator', 'admin', adminPassword, 'admin']);
+
+  await database.run(`
+    INSERT INTO users (nama, username, password, role)
+    VALUES (?, ?, ?, ?)
+  `, ['User', 'user', userPassword, 'user']);
+
+  console.log('Mobile DB Seeder selesai');
+};
 
 export const initMobileDB = async () => {
   if (Capacitor.getPlatform() === 'web') {
@@ -31,6 +54,7 @@ export const initMobileDB = async () => {
 
     // Jalankan migrasi jika diperlukan di mobile
     await runMigrations(db);
+    await runSeeder(db);
     
     return db;
   } catch (error) {
