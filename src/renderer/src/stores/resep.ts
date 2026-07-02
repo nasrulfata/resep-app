@@ -8,6 +8,7 @@ export interface BahanResep {
   satuan: string
   hargaSatuan: number
   subtotal: number
+  jenis?: 'bahan' | 'kemasan'
 }
 
 export interface Resep {
@@ -19,6 +20,11 @@ export interface Resep {
   bahan: BahanResep[]
   totalHarga: number
   hargaPerPorsi: number
+  overhead?: number
+  penyusutan?: number
+  hargaJual?: number
+  keuntungan?: number
+  hpp?: number
   catatan?: string
   createdAt?: string
   updatedAt?: string
@@ -49,7 +55,7 @@ export const useResepStore = defineStore('resep', {
     getTotalHarga: (state) => (resepId: number) => {
       const resep = state.items.find(r => r.id === resepId)
       if (!resep) return 0
-      return resep.bahan.reduce((total, bahan) => total + bahan.subtotal, 0)
+      return resep.bahan.reduce((total, b) => total + b.subtotal, 0)
     }
   },
 
@@ -77,7 +83,8 @@ export const useResepStore = defineStore('resep', {
               jumlah: b.jumlah,
               satuan: b.satuan,
               hargaSatuan: b.hargaSatuan,
-              subtotal: b.subtotal
+              subtotal: b.subtotal,
+              jenis: b.jenis || 'bahan'
             }))
           }
           this.items = reseps
@@ -92,9 +99,20 @@ export const useResepStore = defineStore('resep', {
     async addResep(resep: Resep) {
       try {
         const api = getApi()
-        const totalHarga = resep.bahan.reduce((total, bahan) => total + bahan.subtotal, 0)
-        resep.totalHarga = totalHarga
-        resep.hargaPerPorsi = totalHarga / resep.porsi
+        // Calculate totals on frontend
+        const totalBahan = resep.bahan
+          .filter(b => b.jenis !== 'kemasan')
+          .reduce((sum, b) => sum + b.subtotal, 0)
+        
+        const totalKemasan = resep.bahan
+          .filter(b => b.jenis === 'kemasan')
+          .reduce((sum, b) => sum + b.subtotal, 0)
+        
+        resep.overhead = totalBahan * 0.20
+        resep.penyusutan = totalBahan * 0.10
+        resep.hpp = totalBahan + resep.overhead + resep.penyusutan + totalKemasan
+        resep.totalHarga = resep.hpp
+        resep.hargaPerPorsi = resep.hpp / resep.porsi
 
         let newResep: Resep
         
@@ -105,16 +123,29 @@ export const useResepStore = defineStore('resep', {
         } else {
           const db = getDB()
           const res = await db.run(`
-            INSERT INTO resep (nama, deskripsi, porsi, waktuBuat, totalHarga, hargaPerPorsi, catatan)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [resep.nama, resep.deskripsi, resep.porsi, resep.waktuBuat, resep.totalHarga, resep.hargaPerPorsi, resep.catatan])
+            INSERT INTO resep (nama, deskripsi, porsi, waktuBuat, totalHarga, hargaPerPorsi, overhead, penyusutan, hargaJual, keuntungan, hpp, catatan)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            resep.nama,
+            resep.deskripsi,
+            resep.porsi,
+            resep.waktuBuat,
+            resep.totalHarga,
+            resep.hargaPerPorsi,
+            resep.overhead || 0,
+            resep.penyusutan || 0,
+            resep.hargaJual || 0,
+            resep.keuntungan || 0,
+            resep.hpp || 0,
+            resep.catatan
+          ])
           
           const resepId = res.changes?.lastId
-          for (const bahan of resep.bahan) {
+          for (const b of resep.bahan) {
             await db.run(`
-              INSERT INTO bahan_resep (resep_id, barang_id, namaBarang, jumlah, satuan, hargaSatuan, subtotal)
-              VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [resepId, bahan.barangId, bahan.namaBarang, bahan.jumlah, bahan.satuan, bahan.hargaSatuan, bahan.subtotal])
+              INSERT INTO bahan_resep (resep_id, barang_id, namaBarang, jumlah, satuan, hargaSatuan, subtotal, jenis)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [resepId, b.barangId, b.namaBarang, b.jumlah, b.satuan, b.hargaSatuan, b.subtotal, b.jenis || 'bahan'])
           }
           
           newResep = { ...resep, id: resepId }
@@ -134,15 +165,30 @@ export const useResepStore = defineStore('resep', {
         const index = this.items.findIndex(r => r.id === id)
         if (index === -1) throw new Error('Resep not found')
         
-        const totalHarga = resep.bahan 
-          ? resep.bahan.reduce((total, bahan) => total + bahan.subtotal, 0)
-          : this.items[index].totalHarga
+        const currentBahan = resep.bahan || this.items[index].bahan
         const porsi = resep.porsi || this.items[index].porsi
+        
+        const totalBahan = currentBahan
+          .filter(b => b.jenis !== 'kemasan')
+          .reduce((sum, b) => sum + b.subtotal, 0)
+        
+        const totalKemasan = currentBahan
+          .filter(b => b.jenis === 'kemasan')
+          .reduce((sum, b) => sum + b.subtotal, 0)
+        
+        const overhead = totalBahan * 0.20
+        const penyusutan = totalBahan * 0.10
+        const hpp = totalBahan + overhead + penyusutan + totalKemasan
+        const totalHarga = hpp
+        const hargaPerPorsi = hpp / porsi
         
         const resepToUpdate = {
           ...resep,
           totalHarga,
-          hargaPerPorsi: totalHarga / porsi
+          hargaPerPorsi,
+          overhead,
+          penyusutan,
+          hpp
         }
 
         let updatedResep: Resep
@@ -155,17 +201,31 @@ export const useResepStore = defineStore('resep', {
           const db = getDB()
           await db.run(`
             UPDATE resep
-            SET nama = ?, deskripsi = ?, porsi = ?, waktuBuat = ?, totalHarga = ?, hargaPerPorsi = ?, catatan = ?, updated_at = CURRENT_TIMESTAMP
+            SET nama = ?, deskripsi = ?, porsi = ?, waktuBuat = ?, totalHarga = ?, hargaPerPorsi = ?, overhead = ?, penyusutan = ?, hargaJual = ?, keuntungan = ?, hpp = ?, catatan = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `, [resepToUpdate.nama, resepToUpdate.deskripsi, resepToUpdate.porsi, resepToUpdate.waktuBuat, resepToUpdate.totalHarga, resepToUpdate.hargaPerPorsi, resepToUpdate.catatan, id])
+          `, [
+            resepToUpdate.nama !== undefined ? resepToUpdate.nama : this.items[index].nama,
+            resepToUpdate.deskripsi !== undefined ? resepToUpdate.deskripsi : this.items[index].deskripsi,
+            resepToUpdate.porsi !== undefined ? resepToUpdate.porsi : this.items[index].porsi,
+            resepToUpdate.waktuBuat !== undefined ? resepToUpdate.waktuBuat : this.items[index].waktuBuat,
+            resepToUpdate.totalHarga,
+            resepToUpdate.hargaPerPorsi,
+            resepToUpdate.overhead,
+            resepToUpdate.penyusutan,
+            resepToUpdate.hargaJual !== undefined ? resepToUpdate.hargaJual : this.items[index].hargaJual || 0,
+            resepToUpdate.keuntungan !== undefined ? resepToUpdate.keuntungan : this.items[index].keuntungan || 0,
+            resepToUpdate.hpp,
+            resepToUpdate.catatan !== undefined ? resepToUpdate.catatan : this.items[index].catatan || '',
+            id
+          ])
           
           if (resepToUpdate.bahan) {
             await db.run('DELETE FROM bahan_resep WHERE resep_id = ?', [id])
-            for (const bahan of resepToUpdate.bahan) {
+            for (const b of resepToUpdate.bahan) {
               await db.run(`
-                INSERT INTO bahan_resep (resep_id, barang_id, namaBarang, jumlah, satuan, hargaSatuan, subtotal)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-              `, [id, bahan.barangId, bahan.namaBarang, bahan.jumlah, bahan.satuan, bahan.hargaSatuan, bahan.subtotal])
+                INSERT INTO bahan_resep (resep_id, barang_id, namaBarang, jumlah, satuan, hargaSatuan, subtotal, jenis)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              `, [id, b.barangId, b.namaBarang, b.jumlah, b.satuan, b.hargaSatuan, b.subtotal, b.jenis || 'bahan'])
             }
           }
           

@@ -8,6 +8,7 @@ export interface Barang {
   satuan: string
   stok: number
   deskripsi?: string
+  jenis?: 'bahan' | 'kemasan'
   createdAt?: string
   updatedAt?: string
 }
@@ -70,9 +71,9 @@ export const useBarangStore = defineStore('barang', {
         } else {
           const db = getDB()
           const res = await db.run(`
-            INSERT INTO barang (nama, harga, stok, satuan, deskripsi)
-            VALUES (?, ?, ?, ?, ?)
-          `, [barang.nama, barang.harga, barang.stok, barang.satuan, barang.deskripsi])
+            INSERT INTO barang (nama, harga, stok, satuan, deskripsi, jenis)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `, [barang.nama, barang.harga, barang.stok, barang.satuan, barang.deskripsi, barang.jenis || 'bahan'])
           
           const inserted = await db.query('SELECT * FROM barang WHERE id = ?', [res.changes?.lastId])
           newBarang = inserted.values![0] as Barang
@@ -99,9 +100,9 @@ export const useBarangStore = defineStore('barang', {
           const db = getDB()
           await db.run(`
             UPDATE barang
-            SET nama = ?, harga = ?, stok = ?, satuan = ?, deskripsi = ?, updated_at = CURRENT_TIMESTAMP
+            SET nama = ?, harga = ?, stok = ?, satuan = ?, deskripsi = ?, jenis = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `, [barang.nama, barang.harga, barang.stok, barang.satuan, barang.deskripsi, id])
+          `, [barang.nama, barang.harga, barang.stok, barang.satuan, barang.deskripsi, barang.jenis || 'bahan', id])
           
           const updated = await db.query('SELECT * FROM barang WHERE id = ?', [id])
           updatedBarang = updated.values![0] as Barang

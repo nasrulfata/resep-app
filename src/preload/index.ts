@@ -22,6 +22,10 @@ const api = {
   profil: {
     getByUserId: (userId: number) => ipcRenderer.invoke('profil:getByUserId', userId),
     update: (userId: number, data: any) => ipcRenderer.invoke('profil:update', userId, data)
+  },
+  penjualan: {
+    getAll: () => ipcRenderer.invoke('penjualan:getAll'),
+    create: (data: any) => ipcRenderer.invoke('penjualan:create', data)
   }
 }
 

@@ -17,16 +17,15 @@ class BarangRepository extends BaseRepository {
   create(data: Barang) {
     const info = this.db
       .prepare(`
-        INSERT INTO barang (nama, harga, stok, satuan, deskripsi)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO barang (nama, harga, stok, satuan, deskripsi, jenis)
+        VALUES (?, ?, ?, ?, ?, ?)
       `)
-      .run(data.nama, data.harga, data.stok, data.satuan, data.deskripsi)
+      .run(data.nama, data.harga, data.stok, data.satuan, data.deskripsi, data.jenis || 'bahan')
     
     return this.findById(info.lastInsertRowid as number)
   }
 
   update(id: number, data: Partial<Barang>) {
-    // For simplicity, we assume all fields are provided in update
     this.db
       .prepare(`
         UPDATE barang
@@ -36,10 +35,11 @@ class BarangRepository extends BaseRepository {
           stok = ?,
           satuan = ?,
           deskripsi = ?,
+          jenis = ?,
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `)
-      .run(data.nama, data.harga, data.stok, data.satuan, data.deskripsi, id)
+      .run(data.nama, data.harga, data.stok, data.satuan, data.deskripsi, data.jenis || 'bahan', id)
     
     return this.findById(id)
   }

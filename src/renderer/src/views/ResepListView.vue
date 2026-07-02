@@ -2,10 +2,12 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useResepStore } from '../stores/resep'
+import { usePenjualanStore } from '../stores/penjualan'
 import type { Resep } from '../stores/resep'
 
 const router = useRouter()
 const resepStore = useResepStore()
+const penjualanStore = usePenjualanStore()
 
 const editingResep = ref<Resep | null>(null)
 const showEditForm = ref(false)
@@ -50,6 +52,51 @@ const deleteResep = async (id: number) => {
 const viewDetail = (resepId: number) => {
   router.push(`/resep/${resepId}`)
 }
+
+// Jual Modal Logic
+const showJualModal = ref(false)
+const selectedResepForJual = ref<Resep | null>(null)
+const jualPorsi = ref(1)
+
+const openJualModal = (resep: Resep) => {
+  selectedResepForJual.value = resep
+  jualPorsi.value = 1
+  showJualModal.value = true
+}
+
+const closeJualModal = () => {
+  showJualModal.value = false
+  selectedResepForJual.value = null
+}
+
+const submitPenjualan = async () => {
+  if (!selectedResepForJual.value || jualPorsi.value <= 0) return
+
+  try {
+    const r = selectedResepForJual.value
+    const hpp = r.hargaPerPorsi || 0
+    const hargaJual = r.hargaJual || 0
+    const totalHarga = hargaJual * jualPorsi.value
+    const totalHpp = hpp * jualPorsi.value
+    const keuntungan = totalHarga - totalHpp
+
+    await penjualanStore.addPenjualan({
+      resepId: r.id!,
+      namaResep: r.nama,
+      jumlah: jualPorsi.value,
+      hargaJual,
+      totalHarga,
+      hpp,
+      totalHpp,
+      keuntungan
+    })
+
+    alert(`Berhasil mencatat penjualan ${jualPorsi.value} porsi!`)
+    closeJualModal()
+  } catch (err) {
+    alert('Gagal mencatat penjualan: ' + (err instanceof Error ? err.message : 'Unknown error'))
+  }
+}
 </script>
 
 <template>
@@ -74,25 +121,28 @@ const viewDetail = (resepId: number) => {
             <p class="description">{{ resep.deskripsi }}</p>
             <div class="info-grid">
               <div class="info-item">
-                <span class="label">Total Harga:</span>
-                <span class="value">Rp {{ resep.totalHarga.toLocaleString('id-ID') }}</span>
+                <span class="label">HPP/Porsi:</span>
+                <span class="value">Rp {{ Math.round(resep.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
               </div>
               <div class="info-item">
-                <span class="label">Harga/Porsi:</span>
-                <span class="value">Rp {{ resep.hargaPerPorsi.toLocaleString('id-ID') }}</span>
+                <span class="label">Harga Jual:</span>
+                <span class="value highlight-green">Rp {{ (resep.hargaJual || 0).toLocaleString('id-ID') }}</span>
               </div>
               <div class="info-item">
-                <span class="label">Waktu:</span>
-                <span class="value">{{ resep.waktuBuat }} menit</span>
+                <span class="label">Keuntungan:</span>
+                <span :class="['value', (resep.keuntungan || 0) >= 0 ? 'profit-pos' : 'profit-neg']">
+                  {{ (resep.keuntungan || 0) >= 0 ? '+' : '' }}{{ (resep.keuntungan || 0).toFixed(1) }}%
+                </span>
               </div>
               <div class="info-item">
-                <span class="label">Bahan:</span>
-                <span class="value">{{ resep.bahan.length }} item</span>
+                <span class="label">Bahan Baku:</span>
+                <span class="value">{{ resep.bahan.filter(b => b.jenis !== 'kemasan').length }} item</span>
               </div>
             </div>
           </div>
           <div class="card-footer">
-            <button class="btn btn-sm btn-info" @click="viewDetail(resep.id!)">Lihat Detail</button>
+            <button class="btn btn-sm btn-jual" @click="openJualModal(resep)" title="Catat Penjualan">💰 Jual</button>
+            <button class="btn btn-sm btn-info" @click="viewDetail(resep.id!)">Detail</button>
             <button class="btn btn-sm btn-edit" @click="openEdit(resep)">Edit</button>
             <button class="btn btn-sm btn-delete" @click="deleteResep(resep.id!)">Hapus</button>
           </div>
@@ -125,8 +175,8 @@ const viewDetail = (resepId: number) => {
               <input v-model.number="editingResep!.porsi" type="number" min="1" />
             </div>
             <div class="form-group">
-              <label>Waktu (menit)</label>
-              <input v-model.number="editingResep!.waktuBuat" type="number" min="0" />
+              <label>Harga Jual per Porsi (Rp)</label>
+              <input v-model.number="editingResep!.hargaJual" type="number" min="0" />
             </div>
           </div>
           <div class="form-group">
@@ -137,6 +187,41 @@ const viewDetail = (resepId: number) => {
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="closeEdit">Batal</button>
           <button class="btn btn-primary" @click="saveEdit">Simpan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jual Modal -->
+    <div v-if="showJualModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>💰 Catat Transaksi Penjualan</h2>
+          <button class="close-btn" @click="closeJualModal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Masukkan jumlah porsi resep <strong>{{ selectedResepForJual?.nama }}</strong> yang terjual:</p>
+          <div class="form-group">
+            <label>Jumlah Terjual (Porsi)</label>
+            <input v-model.number="jualPorsi" type="number" min="1" required />
+          </div>
+          <div class="summary-details">
+            <div class="detail-line">
+              <span>HPP per Porsi:</span>
+              <span>Rp {{ Math.round(selectedResepForJual?.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="detail-line">
+              <span>Harga Jual per Porsi:</span>
+              <span>Rp {{ (selectedResepForJual?.hargaJual || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="detail-line total">
+              <span>Total Pendapatan:</span>
+              <span>Rp {{ ((selectedResepForJual?.hargaJual || 0) * jualPorsi).toLocaleString('id-ID') }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeJualModal">Batal</button>
+          <button class="btn btn-primary" @click="submitPenjualan">Simpan Transaksi</button>
         </div>
       </div>
     </div>
@@ -219,7 +304,7 @@ const viewDetail = (resepId: number) => {
 }
 
 .description {
-  color: #666;
+  color: #64748b;
   margin-bottom: 1rem;
   font-size: 0.9rem;
   line-height: 1.4;
@@ -241,21 +326,33 @@ const viewDetail = (resepId: number) => {
 }
 
 .info-item .label {
-  color: #999;
+  color: #94a3b8;
   font-size: 0.8rem;
   margin-bottom: 0.25rem;
 }
 
 .info-item .value {
-  font-weight: 600;
-  color: #333;
+  font-weight: 700;
+  color: #1e293b;
   font-size: 0.9rem;
   word-break: break-word;
 }
 
+.info-item .value.highlight-green {
+  color: #16a34a;
+}
+
+.profit-pos {
+  color: #059669 !important;
+}
+
+.profit-neg {
+  color: #dc2626 !important;
+}
+
 .card-footer {
   padding: 1rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -301,17 +398,17 @@ const viewDetail = (resepId: number) => {
 .btn {
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.85rem;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 1;
-  min-width: 70px;
+  min-width: 60px;
 }
 
 .btn-primary {
@@ -328,15 +425,25 @@ const viewDetail = (resepId: number) => {
   box-shadow: 0 14px 28px rgba(99, 102, 241, 0.28);
 }
 
-.btn-info {
+.btn-jual {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
 }
 
-.btn-info:hover {
+.btn-jual:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
+.btn-info {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-info:hover {
+  background: #e2e8f0;
 }
 
 .btn-edit {
@@ -399,12 +506,14 @@ const viewDetail = (resepId: number) => {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
   word-break: break-word;
 }
 
@@ -413,7 +522,7 @@ const viewDetail = (resepId: number) => {
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #999;
+  color: #94a3b8;
   flex-shrink: 0;
 }
 
@@ -436,7 +545,7 @@ const viewDetail = (resepId: number) => {
 .form-group textarea {
   width: 100%;
   padding: 0.8rem;
-  border: 1.5px solid #dbe2ea;
+  border: 1.5px solid #cbd5e1;
   border-radius: 10px;
   font-family: inherit;
   box-sizing: border-box;
@@ -457,41 +566,38 @@ const viewDetail = (resepId: number) => {
   gap: 1rem;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #333;
-  font-size: 0.95rem;
+.summary-details {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-top: 1.25rem;
 }
 
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-family: inherit;
-  box-sizing: border-box;
-  font-size: 1rem;
+.detail-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  font-size: 0.9rem;
+  color: #64748b;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+.detail-line.total {
+  border-top: 1.5px solid #cbd5e1;
+  padding-top: 0.65rem;
+  margin-top: 0.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  font-size: 1.05rem;
 }
 
 .modal-footer {
   padding: 1.5rem;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid #e2e8f0;
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
   .header {
     align-items: stretch;
@@ -524,7 +630,7 @@ const viewDetail = (resepId: number) => {
   }
 
   .modal-content {
-    border-radius: 8px;
+    border-radius: 12px;
   }
 
   .modal-header {

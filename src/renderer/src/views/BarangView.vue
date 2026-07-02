@@ -13,7 +13,8 @@ const form = ref<Barang>({
   harga: 0,
   satuan: '',
   stok: 0,
-  deskripsi: ''
+  deskripsi: '',
+  jenis: 'bahan'
 })
 
 onMounted(() => {
@@ -23,9 +24,10 @@ onMounted(() => {
 const openForm = (barang?: Barang) => {
   if (barang) {
     form.value = { ...barang }
+    if (!form.value.jenis) form.value.jenis = 'bahan'
     editingId.value = barang.id || null
   } else {
-    form.value = { nama: '', harga: 0, satuan: '', stok: 0, deskripsi: '' }
+    form.value = { nama: '', harga: 0, satuan: '', stok: 0, deskripsi: '', jenis: 'bahan' }
     editingId.value = null
   }
   showForm.value = true
@@ -34,7 +36,7 @@ const openForm = (barang?: Barang) => {
 const closeForm = () => {
   showForm.value = false
   editingId.value = null
-  form.value = { nama: '', harga: 0, satuan: '', stok: 0, deskripsi: '' }
+  form.value = { nama: '', harga: 0, satuan: '', stok: 0, deskripsi: '', jenis: 'bahan' }
 }
 
 const saveBarang = async () => {
@@ -82,6 +84,7 @@ const deleteBarang = async (id: number) => {
           <tr>
             <th>No</th>
             <th>Nama Barang</th>
+            <th>Jenis</th>
             <th>Harga</th>
             <th>Satuan</th>
             <th>Stok</th>
@@ -93,6 +96,11 @@ const deleteBarang = async (id: number) => {
           <tr v-for="(barang, index) in barangStore.items" :key="barang.id">
             <td>{{ index + 1 }}</td>
             <td>{{ barang.nama }}</td>
+            <td>
+              <span :class="['badge', barang.jenis === 'kemasan' ? 'badge-kemasan' : 'badge-bahan']">
+                {{ barang.jenis === 'kemasan' ? '📦 Kemasan' : '🍳 Bahan Baku' }}
+              </span>
+            </td>
             <td>Rp {{ barang.harga.toLocaleString('id-ID') }}</td>
             <td>{{ barang.satuan }}</td>
             <td>{{ barang.stok }}</td>
@@ -115,6 +123,10 @@ const deleteBarang = async (id: number) => {
             <div class="card-row">
               <span class="card-label">No</span>
               <span class="card-value">{{ index + 1 }}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Jenis</span>
+              <span class="card-value">{{ barang.jenis === 'kemasan' ? 'Kemasan' : 'Bahan Baku' }}</span>
             </div>
             <div class="card-row">
               <span class="card-label">Harga</span>
@@ -158,6 +170,13 @@ const deleteBarang = async (id: number) => {
           <div class="form-group">
             <label>Nama Barang *</label>
             <input v-model="form.nama" type="text" placeholder="Contoh: Tepung Terigu" required />
+          </div>
+          <div class="form-group">
+            <label>Jenis Barang *</label>
+            <select v-model="form.jenis" class="form-control" required>
+              <option value="bahan">Bahan Baku</option>
+              <option value="kemasan">Kemasan / Packaging</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Harga *</label>
@@ -495,20 +514,40 @@ const deleteBarang = async (id: number) => {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-family: inherit;
   box-sizing: border-box;
+  background-color: white;
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+.badge-bahan {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+.badge-kemasan {
+  background-color: #fef3c7;
+  color: #b45309;
 }
 
 .modal-footer {
