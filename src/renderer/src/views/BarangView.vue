@@ -533,7 +533,7 @@ const deleteBarang = async (id: number) => {
     display: none;
   }
 
-  .cards-container {
+  .cards-container.hide-cards {
     display: grid;
   }
 

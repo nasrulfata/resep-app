@@ -39,31 +39,29 @@ watch(() => router.currentRoute.value.path, () => {
 </script>
 
 <template>
-  <div>
-    <!-- Mobile Backdrop overlay -->
-    <div v-if="isOpen" class="sidebar-overlay" @click="emit('close')"></div>
+  <!-- Mobile Backdrop overlay -->
+  <div v-if="isOpen" class="sidebar-overlay" @click="emit('close')"></div>
 
-    <div class="sidebar" :class="{ collapsed: isCollapsed, 'mobile-open': isOpen }">
-      <div class="logo">
-        <h2 v-if="!isCollapsed">🍳 Resep App</h2>
-        <h2 v-else class="logo-collapsed">R</h2>
-        <button v-if="isCollapsed" class="toggle-btn desktop-only" @click="toggleSidebar" title="Buka menu">➡️</button>
-        <button v-else class="toggle-btn desktop-only" @click="toggleSidebar" title="Tutup menu">⬅️</button>
-        <button class="close-btn mobile-only" @click="emit('close')">✕</button>
-      </div>
-      <nav class="menu">
-        <router-link
-          v-for="item in filteredMenu"
-          :key="item.path"
-          :to="item.path"
-          :class="['menu-item', { active: isActive(item.path) }]"
-          :title="isCollapsed ? item.label : ''"
-        >
-          <span class="icon">{{ item.icon }}</span>
-          <span class="label" :class="{ 'desktop-hidden': isCollapsed }">{{ item.label }}</span>
-        </router-link>
-      </nav>
+  <div class="sidebar" :class="{ collapsed: isCollapsed, 'mobile-open': isOpen }">
+    <div class="logo">
+      <h2 v-if="!isCollapsed">🍳 Resep App</h2>
+      <h2 v-else class="logo-collapsed">R</h2>
+      <button v-if="isCollapsed" class="toggle-btn desktop-only" @click="toggleSidebar" title="Buka menu">➡️</button>
+      <button v-else class="toggle-btn desktop-only" @click="toggleSidebar" title="Tutup menu">⬅️</button>
+      <button class="close-btn mobile-only" @click="emit('close')">✕</button>
     </div>
+    <nav class="menu">
+      <router-link
+        v-for="item in filteredMenu"
+        :key="item.path"
+        :to="item.path"
+        :class="['menu-item', { active: isActive(item.path) }]"
+        :title="isCollapsed ? item.label : ''"
+      >
+        <span class="icon">{{ item.icon }}</span>
+        <span class="label" :class="{ 'desktop-hidden': isCollapsed }">{{ item.label }}</span>
+      </router-link>
+    </nav>
   </div>
 </template>
 
