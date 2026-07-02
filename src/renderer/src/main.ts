@@ -31,13 +31,24 @@ const init = async () => {
   // Register hardware back button listener for Android/Capacitor
   if (Capacitor.isNativePlatform()) {
     CapApp.addListener('backButton', ({ canGoBack }) => {
-      const path = router.currentRoute.value.path
-      if (path === '/dashboard' || path === '/login') {
-        CapApp.exitApp()
-      } else if (canGoBack) {
-        router.back()
+      // Check if there is an active modal in the DOM and close it first
+      const modalCloseBtn = document.querySelector('.modal .close-btn') as HTMLElement
+      const sidebarOverlay = document.querySelector('.sidebar-overlay') as HTMLElement
+      
+      if (modalCloseBtn) {
+        modalCloseBtn.click()
+      } else if (sidebarOverlay && window.getComputedStyle(sidebarOverlay).display !== 'none') {
+        const sidebarCloseBtn = document.querySelector('.logo .close-btn') as HTMLElement
+        if (sidebarCloseBtn) sidebarCloseBtn.click()
       } else {
-        CapApp.exitApp()
+        const path = router.currentRoute.value.path
+        if (path === '/dashboard' || path === '/login') {
+          CapApp.exitApp()
+        } else if (canGoBack) {
+          router.back()
+        } else {
+          CapApp.exitApp()
+        }
       }
     })
   }
