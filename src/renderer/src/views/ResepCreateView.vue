@@ -184,7 +184,7 @@ const saveResep = async () => {
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Porsi (Output Resep) *</label>
+            <label>Jumlah Pcs / Cup / Porsi (Output) *</label>
             <input v-model.number="form.porsi" type="number" min="1" required />
           </div>
           <div class="form-group">
@@ -313,14 +313,14 @@ const saveResep = async () => {
             <span class="value">Rp {{ hppTotal.toLocaleString('id-ID') }}</span>
           </div>
           <div class="summary-item highlight">
-            <span class="label">HPP per Porsi:</span>
+            <span class="label">HPP per Pcs / Cup / Porsi:</span>
             <span class="value">Rp {{ Math.round(hppPerPorsi).toLocaleString('id-ID') }}</span>
           </div>
         </div>
 
         <div class="pricing-section">
           <div class="form-group pricing-input">
-            <label>Harga Jual per Porsi (Rp) *</label>
+            <label>Harga Jual per Pcs / Cup / Porsi (Rp) *</label>
             <input v-model.number="form.hargaJual" type="number" min="0" placeholder="Masukkan harga jual..." />
           </div>
           <div class="pricing-result">

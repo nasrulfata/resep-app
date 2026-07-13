@@ -103,8 +103,8 @@ const submitPenjualan = async () => {
               <span class="value">{{ resep.deskripsi || 'Tidak ada deskripsi' }}</span>
             </div>
             <div class="info-row">
-              <span class="label">Porsi:</span>
-              <span class="value">{{ resep.porsi }} porsi</span>
+              <span class="label">Pcs / Cup / Porsi (Output):</span>
+              <span class="value">{{ resep.porsi }} pcs/cup/porsi</span>
             </div>
             <div class="info-row">
               <span class="label">Waktu Buat:</span>
@@ -138,11 +138,11 @@ const submitPenjualan = async () => {
               <span class="value">Rp {{ totalKemasan.toLocaleString('id-ID') }}</span>
             </div>
             <div class="info-row highlight-hpp">
-              <span class="label">HPP per Porsi:</span>
+              <span class="label">HPP per Pcs/Cup/Porsi:</span>
               <span class="value">Rp {{ Math.round(resep.hargaPerPorsi).toLocaleString('id-ID') }}</span>
             </div>
             <div class="info-row highlight-price">
-              <span class="label">Harga Jual per Porsi:</span>
+              <span class="label">Harga Jual per Pcs/Cup/Porsi:</span>
               <span class="value">Rp {{ (resep.hargaJual || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="info-row highlight-profit">
@@ -230,18 +230,18 @@ const submitPenjualan = async () => {
           <button class="btn-close" @click="closeJualModal">&times;</button>
         </div>
         <div class="modal-body">
-          <p>Masukkan jumlah porsi resep <strong>{{ resep?.nama }}</strong> yang terjual:</p>
+          <p>Masukkan jumlah pcs / cup / porsi resep <strong>{{ resep?.nama }}</strong> yang terjual:</p>
           <div class="form-group">
-            <label>Jumlah Terjual (Porsi)</label>
+            <label>Jumlah Terjual (Pcs / Cup / Porsi)</label>
             <input v-model.number="jualPorsi" type="number" min="1" required class="form-control" />
           </div>
           <div class="summary-details">
             <div class="detail-line">
-              <span>HPP per Porsi:</span>
+              <span>HPP per Pcs/Cup/Porsi:</span>
               <span>Rp {{ Math.round(resep?.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="detail-line">
-              <span>Harga Jual per Porsi:</span>
+              <span>Harga Jual per Pcs/Cup/Porsi:</span>
               <span>Rp {{ (resep?.hargaJual || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="detail-line total">

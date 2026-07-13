@@ -90,13 +90,13 @@ const submitPenjualan = async () => {
         <div v-for="resep in resepStore.items" :key="resep.id" class="card">
           <div class="card-header">
             <h3>{{ resep.nama }}</h3>
-            <span class="badge">{{ resep.porsi }} Porsi</span>
+            <span class="badge">{{ resep.porsi }} Pcs/Cup/Porsi</span>
           </div>
           <div class="card-body">
             <p class="description">{{ resep.deskripsi }}</p>
             <div class="info-grid">
               <div class="info-item">
-                <span class="label">HPP/Porsi:</span>
+                <span class="label">HPP/Pcs/Cup/Porsi:</span>
                 <span class="value">Rp {{ Math.round(resep.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
               </div>
               <div class="info-item">
@@ -136,18 +136,18 @@ const submitPenjualan = async () => {
           <button class="close-btn" @click="closeJualModal">&times;</button>
         </div>
         <div class="modal-body">
-          <p>Masukkan jumlah porsi resep <strong>{{ selectedResepForJual?.nama }}</strong> yang terjual:</p>
+          <p>Masukkan jumlah pcs / cup / porsi resep <strong>{{ selectedResepForJual?.nama }}</strong> yang terjual:</p>
           <div class="form-group">
-            <label>Jumlah Terjual (Porsi)</label>
+            <label>Jumlah Terjual (Pcs / Cup / Porsi)</label>
             <input v-model.number="jualPorsi" type="number" min="1" required />
           </div>
           <div class="summary-details">
             <div class="detail-line">
-              <span>HPP per Porsi:</span>
+              <span>HPP per Pcs/Cup/Porsi:</span>
               <span>Rp {{ Math.round(selectedResepForJual?.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="detail-line">
-              <span>Harga Jual per Porsi:</span>
+              <span>Harga Jual per Pcs/Cup/Porsi:</span>
               <span>Rp {{ (selectedResepForJual?.hargaJual || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="detail-line total">
