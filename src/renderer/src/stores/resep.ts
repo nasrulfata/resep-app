@@ -182,13 +182,17 @@ export const useResepStore = defineStore('resep', {
         const totalHarga = hpp
         const hargaPerPorsi = hpp / porsi
         
+        const hargaJual = resep.hargaJual !== undefined ? resep.hargaJual : this.items[index].hargaJual || 0
+        const keuntungan = hargaPerPorsi > 0 ? ((hargaJual - hargaPerPorsi) / hargaPerPorsi) * 100 : 0
+        
         const resepToUpdate = {
           ...resep,
           totalHarga,
           hargaPerPorsi,
           overhead,
           penyusutan,
-          hpp
+          hpp,
+          keuntungan
         }
 
         let updatedResep: Resep

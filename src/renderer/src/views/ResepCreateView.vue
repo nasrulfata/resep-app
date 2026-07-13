@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useResepStore } from '../stores/resep'
 import { useBarangStore } from '../stores/barang'
 import type { Resep, BahanResep } from '../stores/resep'
 
 const router = useRouter()
+const route = useRoute()
 const resepStore = useResepStore()
 const barangStore = useBarangStore()
+
+const isEditMode = computed(() => !!route.params.id)
+const recipeId = computed(() => Number(route.params.id))
 
 const form = ref<Resep>({
   nama: '',
@@ -33,6 +37,13 @@ const kemasanJumlah = ref<number | null>(null)
 
 onMounted(async () => {
   await barangStore.fetchBarang()
+  if (isEditMode.value) {
+    await resepStore.fetchResep()
+    const existing = resepStore.getResepById(recipeId.value)
+    if (existing) {
+      form.value = JSON.parse(JSON.stringify(existing))
+    }
+  }
 })
 
 const bahanOptions = computed(() => {
@@ -144,8 +155,14 @@ const saveResep = async () => {
       hpp: hppTotal.value,
       keuntungan: keuntunganPersen.value
     }
-    await resepStore.addResep(resepData)
-    alert('Resep berhasil disimpan!')
+    
+    if (isEditMode.value) {
+      await resepStore.updateResep(recipeId.value, resepData)
+      alert('Resep berhasil diperbarui!')
+    } else {
+      await resepStore.addResep(resepData)
+      alert('Resep berhasil disimpan!')
+    }
     router.push('/resep')
   } catch (err) {
     alert('Error: ' + (err instanceof Error ? err.message : 'Unknown error'))
@@ -155,7 +172,7 @@ const saveResep = async () => {
 
 <template>
   <div class="resep-create-container">
-    <h1>📝 Input Resep Baru</h1>
+    <h1>{{ isEditMode ? '✏️ Edit Resep' : '📝 Input Resep Baru' }}</h1>
 
     <div class="form-wrapper">
       <!-- Section 1: Informasi Resep -->

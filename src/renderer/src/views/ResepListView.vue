@@ -9,34 +9,9 @@ const router = useRouter()
 const resepStore = useResepStore()
 const penjualanStore = usePenjualanStore()
 
-const editingResep = ref<Resep | null>(null)
-const showEditForm = ref(false)
-
 onMounted(() => {
   resepStore.fetchResep()
 })
-
-const openEdit = (resep: Resep) => {
-  editingResep.value = { ...resep }
-  showEditForm.value = true
-}
-
-const closeEdit = () => {
-  showEditForm.value = false
-  editingResep.value = null
-}
-
-const saveEdit = async () => {
-  if (!editingResep.value || !editingResep.value.id) return
-
-  try {
-    await resepStore.updateResep(editingResep.value.id, editingResep.value)
-    alert('Resep berhasil diperbarui!')
-    closeEdit()
-  } catch (err) {
-    alert('Error: ' + (err instanceof Error ? err.message : 'Unknown error'))
-  }
-}
 
 const deleteResep = async (id: number) => {
   if (confirm('Hapus resep ini?')) {
@@ -143,51 +118,13 @@ const submitPenjualan = async () => {
           <div class="card-footer">
             <button class="btn btn-sm btn-jual" @click="openJualModal(resep)" title="Catat Penjualan">💰 Jual</button>
             <button class="btn btn-sm btn-info" @click="viewDetail(resep.id!)">Detail</button>
-            <button class="btn btn-sm btn-edit" @click="openEdit(resep)">Edit</button>
+            <router-link :to="`/resep/${resep.id}/edit`" class="btn btn-sm btn-edit">Edit</router-link>
             <button class="btn btn-sm btn-delete" @click="deleteResep(resep.id!)">Hapus</button>
           </div>
         </div>
       </div>
       <div v-else class="empty">
         <p>Belum ada resep. <router-link to="/resep/create">Buat resep baru</router-link></p>
-      </div>
-    </div>
-
-    <!-- Edit Modal -->
-    <div v-if="showEditForm" class="modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Edit Resep: {{ editingResep?.nama }}</h2>
-          <button class="close-btn" @click="closeEdit">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Nama Resep</label>
-            <input v-model="editingResep!.nama" type="text" />
-          </div>
-          <div class="form-group">
-            <label>Deskripsi</label>
-            <textarea v-model="editingResep!.deskripsi" rows="3"></textarea>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>Porsi</label>
-              <input v-model.number="editingResep!.porsi" type="number" min="1" />
-            </div>
-            <div class="form-group">
-              <label>Harga Jual per Porsi (Rp)</label>
-              <input v-model.number="editingResep!.hargaJual" type="number" min="0" />
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Catatan</label>
-            <textarea v-model="editingResep!.catatan" rows="2"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeEdit">Batal</button>
-          <button class="btn btn-primary" @click="saveEdit">Simpan</button>
-        </div>
       </div>
     </div>
 

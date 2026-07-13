@@ -24,6 +24,7 @@ const router = createRouter({
         { path: 'dashboard', component: DashboardView },
         { path: 'barang', component: BarangView },
         { path: 'resep/create', component: ResepCreateView },
+        { path: 'resep/:id/edit', component: ResepCreateView },
         { path: 'resep', component: ResepListView },
         { path: 'resep/:id', component: ResepDetailView },
         { path: 'profil', component: ProfilView },

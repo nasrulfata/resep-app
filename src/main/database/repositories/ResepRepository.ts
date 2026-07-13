@@ -1,5 +1,5 @@
 import { BaseRepository } from './BaseRepository'
-import type { Resep, BahanResep } from '../../../renderer/src/stores/resep'
+import type { Resep } from '../../../renderer/src/stores/resep'
 
 class ResepRepository extends BaseRepository {
   getAll(): Resep[] {
@@ -9,9 +9,18 @@ class ResepRepository extends BaseRepository {
     
     // Fetch bahan for each resep
     for (const resep of reseps) {
-      resep.bahan = this.db
+      const rows = this.db
         .prepare('SELECT * FROM bahan_resep WHERE resep_id = ?')
-        .all(resep.id) as BahanResep[]
+        .all(resep.id) as any[]
+      resep.bahan = rows.map(b => ({
+        barangId: b.barang_id,
+        namaBarang: b.namaBarang,
+        jumlah: b.jumlah,
+        satuan: b.satuan,
+        hargaSatuan: b.hargaSatuan,
+        subtotal: b.subtotal,
+        jenis: b.jenis
+      }))
     }
     
     return reseps as Resep[]
@@ -23,9 +32,18 @@ class ResepRepository extends BaseRepository {
       .get(id) as any
     
     if (resep) {
-      resep.bahan = this.db
+      const rows = this.db
         .prepare('SELECT * FROM bahan_resep WHERE resep_id = ?')
-        .all(resep.id) as BahanResep[]
+        .all(resep.id) as any[]
+      resep.bahan = rows.map(b => ({
+        barangId: b.barang_id,
+        namaBarang: b.namaBarang,
+        jumlah: b.jumlah,
+        satuan: b.satuan,
+        hargaSatuan: b.hargaSatuan,
+        subtotal: b.subtotal,
+        jenis: b.jenis
+      }))
     }
     
     return resep as Resep | undefined
@@ -63,7 +81,7 @@ class ResepRepository extends BaseRepository {
     for (const bahan of data.bahan) {
       insertBahan.run(
         resepId,
-        bahan.barangId,
+        bahan.barangId || (bahan as any).barang_id,
         bahan.namaBarang,
         bahan.jumlah,
         bahan.satuan,
@@ -122,7 +140,7 @@ class ResepRepository extends BaseRepository {
       for (const bahan of data.bahan) {
         insertBahan.run(
           id,
-          bahan.barangId,
+          bahan.barangId || (bahan as any).barang_id,
           bahan.namaBarang,
           bahan.jumlah,
           bahan.satuan,
