@@ -90,17 +90,21 @@ const submitPenjualan = async () => {
         <div v-for="resep in resepStore.items" :key="resep.id" class="card">
           <div class="card-header">
             <h3>{{ resep.nama }}</h3>
-            <span class="badge">{{ resep.porsi }} Pcs/Cup/Porsi</span>
+            <span class="badge">{{ resep.porsi }} Pcs/Cup</span>
           </div>
           <div class="card-body">
             <p class="description">{{ resep.deskripsi }}</p>
             <div class="info-grid">
               <div class="info-item">
-                <span class="label">HPP/Pcs/Cup/Porsi:</span>
-                <span class="value">Rp {{ Math.round(resep.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
+                <span class="label">HPP 1 Resep:</span>
+                <span class="value">Rp {{ Math.round(resep.hpp || 0).toLocaleString('id-ID') }}</span>
               </div>
               <div class="info-item">
-                <span class="label">Harga Jual:</span>
+                <span class="label">HPP per Pcs/Cup:</span>
+                <span class="value font-medium">Rp {{ Math.round(resep.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Harga Jual/Pcs:</span>
                 <span class="value highlight-green">Rp {{ (resep.hargaJual || 0).toLocaleString('id-ID') }}</span>
               </div>
               <div class="info-item">
@@ -108,6 +112,10 @@ const submitPenjualan = async () => {
                 <span :class="['value', (resep.keuntungan || 0) >= 0 ? 'profit-pos' : 'profit-neg']">
                   {{ (resep.keuntungan || 0) >= 0 ? '+' : '' }}{{ (resep.keuntungan || 0).toFixed(1) }}%
                 </span>
+              </div>
+              <div class="info-item">
+                <span class="label">Output Resep:</span>
+                <span class="value">{{ resep.porsi }} pcs/cup</span>
               </div>
               <div class="info-item">
                 <span class="label">Bahan Baku:</span>

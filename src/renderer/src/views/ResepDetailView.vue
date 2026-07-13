@@ -138,11 +138,19 @@ const submitPenjualan = async () => {
               <span class="value">Rp {{ totalKemasan.toLocaleString('id-ID') }}</span>
             </div>
             <div class="info-row highlight-hpp">
-              <span class="label">HPP per Pcs/Cup/Porsi:</span>
-              <span class="value">Rp {{ Math.round(resep.hargaPerPorsi).toLocaleString('id-ID') }}</span>
+              <span class="label">Total HPP 1 Resep:</span>
+              <span class="value font-semibold">Rp {{ Math.round(resep.hpp || 0).toLocaleString('id-ID') }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Output Resep:</span>
+              <span class="value">{{ resep.porsi }} pcs/cup</span>
+            </div>
+            <div class="info-row highlight-hpp">
+              <span class="label">HPP per Pcs/Cup:</span>
+              <span class="value">Rp {{ Math.round(resep.hargaPerPorsi || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="info-row highlight-price">
-              <span class="label">Harga Jual per Pcs/Cup/Porsi:</span>
+              <span class="label">Harga Jual per Pcs/Cup:</span>
               <span class="value">Rp {{ (resep.hargaJual || 0).toLocaleString('id-ID') }}</span>
             </div>
             <div class="info-row highlight-profit">
